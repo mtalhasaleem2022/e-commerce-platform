@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: ecommerce-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ecommerce
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    container_name: ecommerce-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_CREATE_TOPICS: "product-updates:1:1,user-notifications:1:1,product-priorities:1:1"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    depends_on:
+      - zookeeper
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    container_name: ecommerce-zookeeper
+    ports:
+      - "2181:2181"
+
+  crawler-service:
+    build:
+      context: .
+      dockerfile: ./build/crawler/Dockerfile
+    container_name: ecommerce-crawler
+    depends_on:
+      - postgres
+      - kafka
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_PORT=8080
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=ecommerce
+      - KAFKA_BROKERS=kafka:9092
+      - SCRAPER_BASE_URL=https://www.trendyol.com
+      - ENVIRONMENT=development
+
+  analyzer-service:
+    build:
+      context: .
+      dockerfile: ./build/analyzer/Dockerfile
+    container_name: ecommerce-analyzer
+    depends_on:
+      - postgres
+      - kafka
+    ports:
+      - "8081:8081"
+    environment:
+      - ANALYZER_SERVICE_PORT=8081
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=ecommerce
+      - KAFKA_BROKERS=kafka:9092
+      - ENVIRONMENT=development
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: ./build/notification/Dockerfile
+    container_name: ecommerce-notification
+    depends_on:
+      - postgres
+      - kafka
+    ports:
+      - "8082:8082"
+    environment:
+      - NOTIFICATION_SERVICE_PORT=8082
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=ecommerce
+      - KAFKA_BROKERS=kafka:9092
+      - ENVIRONMENT=development
+
+volumes:
+  postgres_data:

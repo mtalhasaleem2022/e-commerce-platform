@@ -1,0 +1,135 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "github.com/e-commerce/platform/internal/common/proto";
+
+import "google/protobuf/timestamp.proto";
+
+service ProductService {
+  rpc GetProduct(ProductRequest) returns (ProductResponse) {}
+  rpc UpdateProductPriority(PriorityRequest) returns (PriorityResponse) {}
+  rpc ListUserFavorites(UserFavoritesRequest) returns (UserFavoritesResponse) {}
+}
+
+message ProductRequest {
+  string external_id = 1;
+}
+
+message ProductResponse {
+  Product product = 1;
+}
+
+message PriorityRequest {
+  string external_id = 1;
+  uint32 priority = 2;
+}
+
+message PriorityResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message UserFavoritesRequest {
+  uint32 user_id = 1;
+}
+
+message UserFavoritesResponse {
+  repeated Product products = 1;
+}
+
+message Product {
+  uint32 id = 1;
+  string external_id = 2;
+  string name = 3;
+  string description = 4;
+  string url = 5;
+  bool is_active = 6;
+  Category category = 7;
+  Brand brand = 8;
+  Seller seller = 9;
+  repeated Image images = 10;
+  repeated Video videos = 11;
+  repeated Variant variants = 12;
+  double rating = 13;
+  int32 rating_count = 14;
+  int32 favorite_count = 15;
+  int32 comment_count = 16;
+  google.protobuf.Timestamp last_updated = 17;
+  repeated Attribute attributes = 18;
+  repeated uint32 related_product_ids = 19;
+}
+
+message Category {
+  uint32 id = 1;
+  string name = 2;
+  string description = 3;
+  string external_id = 4;
+  uint32 parent_id = 5;
+  int32 level = 6;
+  bool is_active = 7;
+}
+
+message Brand {
+  uint32 id = 1;
+  string name = 2;
+  string external_id = 3;
+  string logo_url = 4;
+  bool is_active = 5;
+}
+
+message Seller {
+  uint32 id = 1;
+  string name = 2;
+  string external_id = 3;
+  double rating = 4;
+  double positive_ratio = 5;
+  bool is_active = 6;
+}
+
+message Image {
+  uint32 id = 1;
+  uint32 product_id = 2;
+  string url = 3;
+  bool is_main = 4;
+  string external_id = 5;
+}
+
+message Video {
+  uint32 id = 1;
+  uint32 product_id = 2;
+  string url = 3;
+  string external_id = 4;
+}
+
+message Variant {
+  uint32 id = 1;
+  uint32 product_id = 2;
+  string external_id = 3;
+  repeated AttributeValue attribute_values = 4;
+  double price = 5;
+  double original_price = 6;
+  int32 discount_rate = 7;
+  int32 stock_count = 8;
+  bool is_active = 9;
+  InstallmentOptions installment_info = 10;
+}
+
+message Attribute {
+  uint32 id = 1;
+  string name = 2;
+  string external_id = 3;
+  repeated AttributeValue values = 4;
+}
+
+message AttributeValue {
+  uint32 id = 1;
+  string value = 2;
+  string external_id = 3;
+}
+
+message InstallmentOptions {
+  bool available = 1;
+  int32 max_months = 2;
+  int32 bank_options = 3;
+}
